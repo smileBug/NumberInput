@@ -45,30 +45,36 @@ class NumberInput extends Component {
     if (negativeJudgment && targetValue !== '.' && targetValue !== '+') {
       // 不合法时的处理...
     } else {
+      let formatValue = targetValue === '.' ? '0.' : targetValue.trim();
       this.setState({
-        Value: targetValue === '.' ? '0.' : targetValue.trim()
+        Value: formatValue
       });
       if (targetValue === '.' || targetValue === '+' || targetValue === '-') {
-        e.target.value = 0;
+        formatValue = 0;
       }
       if(this.props.onChange) {
-        this.props.onChange(e);
+        e.target.value = formatValue;
+        this.props.onChange(e, formatValue);
       }
     }
   }
   blur = e => {
     const targetValue = e.target.value;
+    let formatValue = targetValue === '' ? null : targetValue;
     if(/\.$/.test(targetValue)) {
+      formatValue = parseInt(targetValue, 10);
       this.setState({
-        Value: parseInt(targetValue, 10)
+        Value: formatValue
       });
     } else if(/^[-+]$/.test(targetValue)) {
+      formatValue = 0;
       this.setState({
-        Value: 0
+        Value: formatValue
       });
     }
     if(this.props.onBlur) {
-      this.props.onBlur(e);
+      e.target.value = formatValue;
+      this.props.onBlur(e, formatValue);
     }
   }
 
