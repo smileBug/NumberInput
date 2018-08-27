@@ -1,18 +1,37 @@
-import React, {Component, PropTypes} from 'react';
+import React, {Component} from 'react';
+import PropTypes from 'prop-types';
+import Field from './Field';
+import {Input} from 'antd';
+import {observer} from 'mobx-react';
+import C from 'calc';
 
-class NumberInput extends Component {
+function roundValue(value) {
+  let defaultValue;
+  if(value && typeof value === 'object' && value.isDivided) {
+    defaultValue = value.result;
+  }else {
+    defaultValue = value;
+  }
+  if (defaultValue === 0) {
+    defaultValue = 0;
+  } else if(isNaN(defaultValue) || !defaultValue) {
+    defaultValue = '';
+  }else{
+    defaultValue = C.round(defaultValue);
+  }
+  return defaultValue;
+}
+
+@observer
+class NumberField extends Field {
   static propTypes = {
-    value: PropTypes.number,
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.object]),
     negative: PropTypes.bool
   }
+
   constructor(props) {
     super(props);
-    let defaultValue = props.value;
-    if (defaultValue === 0) {
-      defaultValue = 0;
-    } else if(isNaN(defaultValue) || !defaultValue) {
-      defaultValue = '';
-    }
+    let defaultValue = roundValue(props.value);
     this.state = {
       Value: defaultValue
     };
@@ -24,13 +43,21 @@ class NumberInput extends Component {
       Value: value
     });
   }
+
   componentWillReceiveProps(nextProps) {
     if (nextProps.value !== this.props.value) {
+      let value;
+      if (nextProps.value === '-' || nextProps.value === '+') {
+        value = nextProps.value;
+      } else {
+        value = roundValue(nextProps.value);
+      }
       this.setState({
-        Value: nextProps.value
+        Value: value
       });
     }
   }
+
   // 点击选中
   click = e => {
     e.target.select();
@@ -38,6 +65,7 @@ class NumberInput extends Component {
       this.props.onClick(e);
     }
   }
+
   change = e => {
     // negative->判断能否输负数 true->可为负数 false->不可为负数 默认为不可为负数
     const {negative} = this.props;
@@ -52,7 +80,7 @@ class NumberInput extends Component {
     if (negativeJudgment && targetValue !== '.' && targetValue !== '+') {
       // 不合法时的处理...
     } else {
-      let formatValue = targetValue === '.' ? '0.' : targetValue.trim();
+      let formatValue = targetValue === '.' ? '0.' : _.trim(targetValue);
       this.setState({
         Value: formatValue
       });
@@ -67,7 +95,7 @@ class NumberInput extends Component {
   }
   blur = e => {
     const targetValue = e.target.value;
-    let formatValue = targetValue === '' ? null : targetValue;
+    let formatValue = targetValue === '' ? null : C.round(targetValue);
     // 小数点结尾
     if(/\.$/.test(targetValue)) {
       formatValue = parseInt(targetValue, 10);
@@ -89,11 +117,14 @@ class NumberInput extends Component {
 
   render() {
     const {Value} = this.state;
-    const {value, negative, onChange, onBlur, onClick, ...props} = this.props;
+    const {value, negative, onChange, onBlur, onClick, errorMsg, ...props} = this.props;
     return (
-      <input {...props} value={Value} onChange={this.change} onBlur={this.blur} onClick={this.click}/>
+      <div className='qn-form-item' >
+        <Input ref={ref => {this.input = ref;}} {...props} value={Value} onChange={this.change} onBlur={this.blur} onClick={this.click}/>
+        {this.renderError()}
+      </div>
     );
   }
 }
 
-export default NumberInput;
+export default NumberField;
